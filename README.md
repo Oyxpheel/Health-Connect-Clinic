@@ -68,6 +68,30 @@ As the Data Science track, the responsibility for this project is to define the 
 
 **Note on structure:** Week 4 and Week 6 deliverables are organised into their own folders. The original dataset, data dictionary, and processed dataset are shared inputs used across weeks and are kept at the repo root rather than duplicated per folder. Week 5's notebook and summary remain at the root for now and will move into a `week5/` folder once marked.
 
-## Next Steps (Week 7)
+## Week 7 Progress — Testing, Refinement & End-to-End Validation
 
-Tune the Random Forest's hyperparameters and re-compare against the baseline, test alternative decision thresholds to prioritise recall, investigate the age feature's unexpectedly high importance, test Angela's reminder-channel × lead-time interaction suggestion, and resolve the open distance_to_clinic_km disagreement with Claudia.
+**Status:** Complete
+
+- Continued from the Week 6 candidate work: tuned Random Forest (`max_depth=10`, `min_samples_leaf=5`, `n_estimators=200`) and re-evaluated against the baseline — tuning reduced overfitting but did not close the recall gap (recall unchanged at 0.61), confirming Week 6's model-level limitation conclusion with direct evidence
+- Trained and tested Gradient Boosting as a new candidate algorithm; initially appeared to beat the baseline on the test split (recall 0.64 vs 0.62), validated against predicted-vs-actual no-show rate to rule out over-flagging
+- Ran a threshold sweep (0.3–0.6) on Gradient Boosting and selected 0.4 as the recommended cutoff (recall 0.81, precision 0.57 at that threshold)
+- Checked Gradient Boosting's performance across Data Analytics' key segments (appointment type, reminder channel) — found weaker recall on Specialist Consultation appointments (0.72) and weaker precision on the WhatsApp reminder group (0.51)
+- Conducted error analysis comparing false negatives against true positives: found first-time patients are ~4x more common among false negatives, and false negatives generally carry less prior no-show history and less extreme booking lead time — the model's two strongest signals have no data to work with for patients with no track record
+- Compared Gradient Boosting's false negatives against the baseline's: 86 of 92 (93%) were shared misses, confirming this is a model-independent, data-level blind spot rather than an algorithm-choice problem; Gradient Boosting still recovered 97 patients the baseline missed while losing only 6
+- **Key finding:** ran 5-fold cross-validation to test whether the recall improvement was statistically real — it was not. Baseline and Gradient Boosting are statistically tied (0.625 ± 0.013 vs 0.627 ± 0.009). **The earlier "Gradient Boosting beats baseline" claim is withdrawn.** Gradient Boosting is retained as the Week 7 candidate on the basis of more explainable errors and slightly better generalisation, not superior recall
+- Re-selected the 0.4 decision threshold using out-of-fold predictions (rather than the test set) after identifying the original sweep risked being fitted to that specific split — the leakage-free result closely matched the original (recall 0.79, precision 0.58), confirming the threshold holds up
+- Ran a train-vs-test overfitting check: found tuned Random Forest still carries a real train-test gap (0.74 vs 0.61 recall) despite the earlier "fixed most of the overfitting" claim; Gradient Boosting shows a smaller gap (0.71 vs 0.64) and generalises somewhat more reliably
+- Corrected the age feature importance comparison: the original figure (0.202) was mistakenly taken from the untuned Random Forest; the correct tuned-model figure is 0.138, close to Gradient Boosting's 0.132 — age is confirmed as a real but more modest signal than first reported
+- Collaborated with **Hudu Yusuf Ibrahim** (Data Analytics) to resolve a no-show rate discrepancy: my figure (70.5%) for a patient segment didn't match his reported figure (64.1%) for what he described as the same segment. Traced the gap to Cancelled-appointment handling and a mismatched lead-time cutoff definition — retesting with his exact "3+ weeks" (21+ days) cutoff produced 63.4%, within 0.7 points of his number, fully resolving the discrepancy
+- Documented a model suitability assessment, an ML Engineering handoff spec (feature list, output format, decision threshold, known limitations), and Week 8 recommendations
+- Updated limitations, risks, and dependencies to reflect all Week 7 findings, including the withdrawn recall claim and the persistent first-time-patient blind spot
+
+## Files
+
+- `week7/HealthConnect_Clinic_Week7_DataScience.ipynb` — Week 7 notebook (testing, error analysis, statistical validation, threshold correction, cross-track testing)
+- `week7/PROJECT_SUMMARY_WEEK_7.docx` — Week 7 Project Summary
+- `week7/week7_gradient_boosting_model.pkl` — Week 7 candidate model, saved for reuse in Week 8
+
+## Next Steps (Week 8)
+
+Finalise model choice (baseline vs Gradient Boosting) using criteria beyond recall, since Week 7 showed recall alone doesn't distinguish them. Confirm the model's fit with ML Engineering's finalised pipeline. Investigate the Specialist Consultation and WhatsApp-reminder segment weaknesses. Engineer or source a feature that addresses the first-time-patient blind spot.
