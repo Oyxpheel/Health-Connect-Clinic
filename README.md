@@ -53,21 +53,6 @@ As the Data Science track, the responsibility for this project is to define the 
 - **Candidate model recommendation:** the original Week 5 baseline Logistic Regression, unchanged — the two tested alternatives did not outperform it
 - Documented limitations, risks, and dependencies (resolved/unresolved issues, new issues, technical/data/modelling limitations, integration challenges, and recommended mitigations), and defined Week 7 testing requirements
 
-## Files
-
-- `week4/Health_connect_clinic.ipynb` — Week 4 notebook (problem definition through modelling approach)
-- `week4/Health Connect Clinic.docx` — Week 4 Project Summary
-- `HealthConnect_Clinic_Week5_DataScience.ipynb` — Week 5 notebook (data preparation, EDA, feature selection, feature engineering, baseline model, evaluation)
-- `Week 5 Project Summary.docx` — Week 5 Project Summary
-- `week6/HealthConnect_Clinic_Week6_DataScience.ipynb` — Week 6 notebook (error analysis, cross-track validation, feature refinement, model comparison, evaluation)
-- `week6/Project Summary(Week 6).docx` — Week 6 Project Summary
-- `HealthConnect_Appointment_Data.csv` — original appointment dataset, unmodified (provided by AnalystLab Africa)
-- `HealthConnect_Data_Dictionary.xlsx` — variable reference for the appointment dataset
-- `HealthConnect_ML_Processed.csv` — derived, modelling-ready dataset (Cancelled appointments excluded, target encoded)
-- `week6/week5_baseline_model.pkl`, `week6/week5_X_train.csv`, `week6/week5_X_test.csv`, `week6/week5_y_train.csv`, `week6/week5_y_test.csv` — Week 5 model and split artefacts, saved for reuse in Week 6
-
-**Note on structure:** Week 4 and Week 6 deliverables are organised into their own folders. The original dataset, data dictionary, and processed dataset are shared inputs used across weeks and are kept at the repo root rather than duplicated per folder. Week 5's notebook and summary remain at the root for now and will move into a `week5/` folder once marked.
-
 ## Week 7 Progress — Testing, Refinement & End-to-End Validation
 
 **Status:** Complete
@@ -88,10 +73,78 @@ As the Data Science track, the responsibility for this project is to define the 
 
 ## Files
 
+- `week4/Health_connect_clinic.ipynb` — Week 4 notebook (problem definition through modelling approach)
+- `week4/Health Connect Clinic.docx` — Week 4 Project Summary
+- `HealthConnect_Clinic_Week5_DataScience.ipynb` — Week 5 notebook (data preparation, EDA, feature selection, feature engineering, baseline model, evaluation)
+- `Week 5 Project Summary.docx` — Week 5 Project Summary
+- `week6/HealthConnect_Clinic_Week6_DataScience.ipynb` — Week 6 notebook (error analysis, cross-track validation, feature refinement, model comparison, evaluation)
+- `week6/Project Summary(Week 6).docx` — Week 6 Project Summary
 - `week7/HealthConnect_Clinic_Week7_DataScience.ipynb` — Week 7 notebook (testing, error analysis, statistical validation, threshold correction, cross-track testing)
 - `week7/PROJECT_SUMMARY_WEEK_7.docx` — Week 7 Project Summary
 - `week7/week7_gradient_boosting_model.pkl` — Week 7 candidate model, saved for reuse in Week 8
+- `HealthConnect_Appointment_Data.csv` — original appointment dataset, unmodified (provided by AnalystLab Africa)
+- `HealthConnect_Data_Dictionary.xlsx` — variable reference for the appointment dataset
+- `HealthConnect_ML_Processed.csv` — derived, modelling-ready dataset (Cancelled appointments excluded, target encoded; missing `reminder_channel` values filled as "No Reminder" for the Week 8 cross-track check with Data Analytics)
+- `week6/week5_baseline_model.pkl`, `week6/week5_X_train.csv`, `week6/week5_X_test.csv`, `week6/week5_y_train.csv`, `week6/week5_y_test.csv` — Week 5 model and split artefacts, saved for reuse in Week 6
+- `week6_X_train.csv`, `week6_X_test.csv`, `week6_y_train.csv`, `week6_y_test.csv` — 18-feature train/test split used across Week 7 and Week 8
 
-## Next Steps (Week 8)
+**Note on structure:** Week 4, Week 6, and Week 7 deliverables are organised into their own folders. The original dataset, data dictionary, and processed dataset are shared inputs used across weeks and are kept at the repo root rather than duplicated per folder. Week 5's notebook and summary remain at the root for now and will move into a `week5/` folder once marked.
 
-Finalise model choice (baseline vs Gradient Boosting) using criteria beyond recall, since Week 7 showed recall alone doesn't distinguish them. Confirm the model's fit with ML Engineering's finalised pipeline. Investigate the Specialist Consultation and WhatsApp-reminder segment weaknesses. Engineer or source a feature that addresses the first-time-patient blind spot.
+## Week 8 Progress — Final Model Selection, Documentation & Presentation
+
+**Status:** Complete
+
+- Set out to resolve Week 7's open question — model choice between the baseline and Gradient Boosting was still undecided, since recall alone couldn't distinguish them
+- Discovered a feature mismatch that had gone unnoticed through Weeks 6–7: the Week 5 baseline was trained on 14 features, while Gradient Boosting (and the dataset from Week 6 onward) used 18. Any recall/precision gap between the two was therefore partly a feature-count confound, not a clean algorithm comparison
+- Retrained the baseline Logistic Regression on the same 18-feature set as Gradient Boosting to remove that confound
+- **Key finding:** once compared fairly at the matched 0.4 threshold, the earlier apparent Gradient Boosting advantage disappeared — Logistic Regression (recall 0.803, precision 0.583) and Gradient Boosting (recall 0.81, precision 0.57) were effectively tied, with differences well within normal variation
+- Ran a train-vs-test overfitting check on the retrained baseline: train-test recall gap of just 0.004, roughly 17x smaller than Gradient Boosting's 0.07 — meaning the baseline's test performance is a substantially more reliable estimate of real-world behaviour
+- **Decision:** selected the retrained Logistic Regression (18 features, threshold 0.4) as the final model, replacing Gradient Boosting — driven by reliability and interpretability rather than a raw performance edge, since the two were statistically tied
+- Re-ran the Week 6 error analysis pattern on the final model directly rather than assuming it still held: confirmed with statistical tests that missed no-shows (n=95) book more recently (t = -17.53, p < 0.0001) and have cleaner prior-no-show histories (t = -4.04, p < 0.0001) than caught no-shows
+- Formally tested the two segment weaknesses flagged in Week 7 for statistical significance rather than treating them as confirmed:
+  - **Specialist Consultation recall gap (0.745 vs 0.817 overall):** not statistically significant (p = 0.111) — ruled out as sample-size noise, not a genuine model weakness
+  - **WhatsApp-reminder precision gap (0.512 vs 0.605 overall):** statistically significant (p = 0.037) — confirmed as a real, unresolved weakness
+- Investigated the confirmed WhatsApp gap against the model's three strongest features (`is_first_time_patient`, `prior_no_show_rate`, `booking_lead_days`) — none statistically explained the gap; logged as an open limitation with cause not yet identified
+- Collaborated with four cross-track contacts on final integration:
+  - **zakheni (Data Analytics):** joint investigation into the WhatsApp precision gap, ruling out three plausible causes together
+  - **Claudia (Data Analytics):** resolved the Week 6 `distance_to_clinic_km` disagreement — a point-biserial correlation check (r = 0.039, p = 0.230) confirmed her no-correlation finding without contradicting this track's feature-importance result, since the two tests answer different questions
+  - **Angela (Data Analytics):** tested her second, previously untested interaction suggestion (reminder channel × lead time) — direction matched her finding (21.1% vs 29.5%) but did not reach statistical significance (p = 0.147)
+  - **ML Engineering:** sent the final model type, threshold, feature list, and known limitations on September 25th; pipeline-side confirmation outstanding as of this writeup
+- Documented final model strengths, weaknesses, and business suitability: suitable for low-cost interventions (reminders) given precision of 0.583, not currently suitable for high-cost actions (overbooking, slot reassignment)
+- Wrote a plain-language model summary for non-technical stakeholders
+- Saved the final model artefact and produced a final baseline-vs-Gradient-Boosting comparison chart
+- Prepared final presentation materials (slide deck) and this README update as the closing documentation deliverable
+
+## Final Model Summary
+
+| Metric | Value |
+|---|---|
+| Final model | Logistic Regression (18 features) |
+| Decision threshold | 0.4 |
+| Recall | 0.803 |
+| Precision | 0.583 |
+| Train-test recall gap | 0.004 |
+
+**Why this model:** Gradient Boosting initially looked stronger on recall (0.64 vs 0.62 at the default threshold), but 5-fold cross-validation showed the two models were statistically tied, and the apparent edge disappeared entirely once the baseline was retrained on the same feature set. Logistic Regression was selected for its far smaller train-test gap and easier interpretability for ML Engineering and non-technical stakeholders.
+
+## Files (Week 8)
+
+- `HealthConnect_Clinic_Week8_DataScience.ipynb` — Week 8 notebook (final integration readiness, final model selection, error analysis, segment significance testing, business interpretation, cross-track collaboration records, limitations)
+- `week8_final_model.pkl` — final selected model (Logistic Regression), saved via `joblib.dump`; apply at threshold 0.4 using `predict_proba()[:, 1]`, not `.predict()`
+- `final_model_comparison.png` — Week 8 recall/precision comparison chart, Logistic Regression vs Gradient Boosting at matched threshold
+- `HealthConnect_Week8_DataScience_Presentation.pptx` — final presentation deck (project journey, model comparison, key metrics, business recommendation, cross-track collaboration)
+
+## Known Limitations
+
+- **Performance ceiling:** roughly 4 in 10 patients flagged as likely no-shows will actually attend. Suitable for low-cost interventions (reminders); not currently suitable for high-cost actions (overbooking, slot reassignment)
+- **Model choice was not a decisive win:** Logistic Regression and Gradient Boosting were statistically tied on recall and precision at matched threshold; the final call rested on reliability and interpretability, not a clear performance advantage
+- **Residual train-test gap:** even the chosen model retains a small train-test gap (0.004) — some overfitting is still present
+- **WhatsApp-reminder segment:** statistically significant precision drop (p = 0.037), cause not yet identified after testing the model's three strongest features
+- **First-time patients:** under-flagged, since the model's strongest signals (prior history, lead time) have little to work with for these patients
+- **ML Engineering pipeline integration:** final model spec sent September 25th; pipeline-side confirmation outstanding as of this writeup
+- **Reminder-channel/lead-time interaction:** Angela's suggested Email-vs-SMS effect for short-notice appointments matched direction but did not reach statistical significance (p = 0.147); not yet confirmed evidence for reminder-channel strategy decisions
+
+## Project Links
+
+- GitHub: https://github.com/Oyxpheel/Health-Connect-Clinic
+- LinkedIn: https://www.linkedin.com/in/fatimahodumuyiwa/
